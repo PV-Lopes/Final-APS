@@ -3,52 +3,59 @@ const path = require('path');
 const supabase = require('../config/supabase'); // Importa o cliente do Supabase a partir de config/supabase.js
 
 
-// Função de criar produto com imagem do servidor
+// Função de criar produto com imagem ou URL
 const createProduto = async (req, res) => {
-  const { nome, descricao, quantidade, foto } = req.body; 
+  const { nome, descricao, quantidade, foto } = req.body;
 
-    // Valida se todos os campos foram preenchidos
-    if (!nome || !descricao || !quantidade || !foto) {
-      return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
-    }
-  
-    // Valida se o arquivo foi enviado
-    if (!req.file) {
-      return res.status(400).json({ error: 'Nenhuma imagem foi enviada' });
-    }
-    const imagePath = path.join(__dirname, '../uploads', req.file.filename); // Caminho da imagem na pasta uploads
-
-  // Lê o arquivo de imagem
-  const fileBuffer = fs.readFileSync(imagePath); // Lê o arquivo da pasta local
-
-  // Envia a imagem para o Supabase
-  const { data, error } = await supabase.storage
-    .from('Produtos_IMG') // Nome do bucket
-    .upload(`images/${Date.now()}-${req.file.filename}`, fileBuffer, {
-      contentType: req.file.mimetype, // Tipo da imagem
-    });
-
-  if (error) {
-    return res.status(500).json({ error: error.message });
+  // Valida se todos os campos obrigatórios foram preenchidos
+  if (!nome || !descricao || !quantidade) {
+    return res.status(400).json({ error: 'Preencha todos os campos obrigatórios' });
   }
 
-  // Obtém a URL pública da imagem
-  const imageUrl = supabase.storage
-    .from('Produtos_IMG')
-    .getPublicUrl(`images/${data.path}`)
-    .publicURL;
+  let imageUrl = foto; // Inicialmente usa a URL enviada no corpo
 
-  // Agora, cria o produto no banco de dados com a URL da imagem
+  // Caso um arquivo tenha sido enviado, processa o upload
+  if (req.file) {
+    const imagePath = path.join(__dirname, '../uploads', req.file.filename); // Caminho do arquivo
+
+    // Lê o arquivo localmente
+    const fileBuffer = fs.readFileSync(imagePath);
+
+    // Envia para o Supabase
+    const { data, error } = await supabase.storage
+      .from('Produtos_IMG')
+      .upload(`images/${Date.now()}-${req.file.filename}`, fileBuffer, {
+        contentType: req.file.mimetype,
+      });
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    // Obtém a URL pública da imagem enviada
+    imageUrl = supabase.storage
+      .from('Produtos_IMG')
+      .getPublicUrl(`images/${data.path}`)
+      .publicURL;
+  }
+
+    // Insere o produto e retorna o registro inserido
   const { data: produto, error: insertError } = await supabase
     .from('produtos')
-    .insert([{ nome, descricao, quantidade, foto: imageUrl }]);
+    .insert([{ nome, descricao, quantidade, foto: imageUrl }])
+    .select('*'); // Retorna o registro recém-criado
 
   if (insertError) {
     return res.status(500).json({ error: insertError.message });
-  }
+    }
 
-  res.status(201).json(produto); // Retorna o produto com a URL da imagem
+    // Retorna a mensagem de sucesso com o produto criado
+  res.status(201).json({
+    message: 'Produto enviado com sucesso!',
+    produto,
+  });
 };
+
 
 // Função para listar todos os produtos
 const getAllProdutos = async (req, res) => {
@@ -137,21 +144,37 @@ const updateProduto = async (req, res) => {
 const deleteProduto = async (req, res) => {
   const { id } = req.params;
 
+  // Verifica se o produto existe antes de tentar deletar
+  const { data: produtoExistente, error: erroBusca } = await supabase
+    .from('produtos')
+    .select('*')
+    .eq('id', id);
+
+  // Se houve erro na busca
+  if (erroBusca) {
+    return res.status(500).json({ error: erroBusca.message });
+  }
+
+  // Verifica se o produto foi encontrado
+  if (produtoExistente.length === 0) {
+    return res.status(404).json({ error: 'Produto não encontrado' });
+  }
+
+  // Realiza a deleção do produto
   const { data, error } = await supabase
     .from('produtos')
     .delete()
-    .eq('id', id); // Filtra pelo ID do produto a ser excluído
+    .eq('id', id);
 
+  // Se houve erro ao deletar
   if (error) {
     return res.status(500).json({ error: error.message });
   }
 
-  if (data.length === 0) {
-    return res.status(404).json({ error: 'Produto não encontrado' });
-  }
-
+  // Retorna sucesso
   res.status(200).json({ message: 'Produto deletado com sucesso' });
 };
+
 
 module.exports = {
   createProduto,

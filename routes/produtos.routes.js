@@ -13,6 +13,7 @@ const path = require('path'); // Para manipulação de caminhos de arquivos
 //     cb(null, Date.now() + path.extname(file.originalname));
 //   },
 // });
+
 // Configurando o Multer para salvar as imagens na pasta 'uploads'
 const upload = multer({
   dest: path.join(__dirname, '../uploads')  // Define a pasta onde os arquivos serão armazenados

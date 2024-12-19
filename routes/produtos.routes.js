@@ -36,27 +36,6 @@ router.post('/', (req, res, next) => {
 }, produtosController.createProduto);
 
 
-// // Rota para criar um novo produto (com ou sem imagem)
-// router.post(
-//   '/',
-//   (req, res, next) => {
-//     // Verifica se há um arquivo anexado
-//     if (req.headers['content-type']?.includes('multipart/form-data')) {
-//       upload.single('foto')(req, res, next);
-//     } else {
-//       next(); // Não usa multer, continua o fluxo
-//     }
-//   },
-//   produtosController.createProduto
-// );
-
-// Rota para criar um novo produto com imagem (upload ou URL)
-// router.post('/', upload.single('foto'), (req, res, next) => {
-//   console.log('Arquivo recebido pelo multer:', req.file);
-//   next(); // Continue para o próximo middleware
-// }, produtosController.createProduto);
-
-
 // Rota para listar todos os produtos
 router.get('/', produtosController.getAllProdutos);
 

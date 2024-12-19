@@ -28,7 +28,7 @@ Este é o backend de um sistema de gerenciamento de estoque, desenvolvido em Nod
 
 2. Acesse o diretório do projeto:
    ```bash
-   cd estoque-backend
+   cd Final-APS
    ```
 
 3. Instale as dependências:

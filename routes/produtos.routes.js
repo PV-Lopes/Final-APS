@@ -3,7 +3,7 @@ const produtosController = require('../controllers/produtos.controller'); // Imp
 const multer = require('multer'); // Importando o multer para upload de imagens
 const path = require('path'); // Para manipulação de caminhos de arquivos
 
-
+//IGNORE
 // Configurando o Multer para armazenar as imagens localmente
 // const storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
